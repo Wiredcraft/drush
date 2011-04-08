@@ -388,6 +388,11 @@ function drush_bootstrap_error($code, $message = null) {
  * handler takes over.
  */
 function drush_error_handler($errno, $message, $filename, $line, $context) {
+  // @see http://drupal.org/node/1120848
+  if (defined('E_DEPRECATED')) {
+    $errno = $errno & ~E_DEPRECATED;
+  }
+
   // If the @ error suppression operator was used, error_reporting will have
   // been temporarily set to 0.
   if (error_reporting() == 0) {
