@@ -135,6 +135,11 @@ function _drush_make_download_file($download) {
               $current_header[$name] = $value;
             }
             else {
+              $matches = array();
+              preg_match('/HTTP\/1\.1 (\d\d\d)/', $h, $matches);
+              if (isset($matches[1]) && ($matches[1]{0} == 4 || $matches[1]{0} == 5)) {
+                $success = FALSE;
+              }
               $first = FALSE;
             }
           }
@@ -171,7 +176,7 @@ function _drush_make_download_file($download) {
               break;
             default:
               // Oops, error.
-              drush_make_error('BUILD_ERROR', $result->message);
+              drush_make_error('BUILD_ERROR', $result->error);
               return;
           }
           $download_mechanism = 'drush_make';
@@ -200,7 +205,7 @@ function _drush_make_download_file($download) {
         foreach ($parts as $part) {
           $inner_parts = explode('=', $part, 2);
           if (trim($inner_parts[0]) == 'filename') {
-            $file = trim($inner_parts[1], "\"'");
+            $file = basename(trim($inner_parts[1], "\"'"));
             break;
           }
         }
@@ -365,6 +370,7 @@ function drush_make_download_git($name, $download, $download_location) {
   $matches = array();
   preg_match($regex, $download['url'], $matches);
   // Assign the matched parts of url to the result array
+  $url_array['protocol'] = $matches[1];
   $url_array['user']     = $matches[2];
   $url_array['port']     = $matches[5];
   $url_array['host']     = $matches[3];
@@ -387,7 +393,7 @@ function drush_make_download_git($name, $download, $download_location) {
       case 'git':
         // github uses two different urls, working copy urls using scp format
         // git@domain:repo export url format are git://domain/repo
-        if ($wc) {
+        if ($wc && $url_array['host'] == 'github.com') {
           // working copy is set
           $url = 'git@'. $url_array['host'] .':'. $url_array['resource'];
           break;
@@ -400,7 +406,7 @@ function drush_make_download_git($name, $download, $download_location) {
       case 'rsync':
       case 'file':
         // @TODO: implement port & user options
-        $url_array['protocol'] .'://'. $url_array['user'] . $url_array['host'] .'/'. $url_array['resource'];
+        $url = $url_array['protocol'] .'://'. $url_array['user'] . $url_array['host'] .'/'. $url_array['resource'];
         break;
   
       default:

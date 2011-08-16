@@ -92,22 +92,21 @@ function drush_make_drush_help($section) {
 
 function drush_drush_make_make_validate() {
   drush_make_ensure_version();
+  if (drush_get_option('version', FALSE)) {
+    drush_print(drush_make_version());
+    return FALSE;
+  }
 }
 
 /**
  * Drush callback; make based on the makefile.
  */
 function drush_drush_make_make($makefile = NULL, $build_path = NULL) {
-  if (drush_get_option('version', FALSE)) {
-    drush_print(drush_make_version());
-    return;
-  }
-
   if (!($build_path = drush_make_build_path($build_path))) {
     return;
   }
   $info = drush_make_parse_info_file($makefile);
-  if ( $info === FALSE || ($info = drush_make_validate_info_file($info)) === FALSE) {
+  if ($info === FALSE || ($info = drush_make_validate_info_file($info)) === FALSE) {
     return FALSE;
   }
 
@@ -148,7 +147,7 @@ function drush_drush_make_post_make($makefile = NULL, $build_path = NULL) {
 function drush_make_projects($recursion, $contrib_destination, $info, $build_path) {
   $projects = array();
   if (empty($info['projects'])) {
-    if (drush_get_option('no-core')) {
+    if (drush_get_option('no-core') || $recursion) {
       return TRUE;
     }
     else {
@@ -214,9 +213,8 @@ function drush_make_projects($recursion, $contrib_destination, $info, $build_pat
       if ($ignore_checksums) {
         unset($project['download']['md5']);
       }
-      $class_name = 'DrushMakeProject_' . $project['type'];
-      if (class_exists($class_name)) {
-        $projects[($project['type'] == 'core' ? 'core' : 'contrib')][$project['name']] = new $class_name($project);
+      if ($instance = DrushMakeProject::getInstance($project['type'], $project)) {
+        $projects[($project['type'] == 'core' ? 'core' : 'contrib')][$project['name']] = $instance;
       }
       else {
         drush_make_error('PROJECT-TYPE', dt('Non-existent project type %type on project %project', array('%type' => $project['type'], '%project' => $key)));
@@ -260,7 +258,7 @@ function drush_make_libraries($contrib_destination, $info, $build_path) {
     if ($ignore_checksums) {
       unset($library['download']['md5']);
     }
-    $class = new DrushMakeProject_Library($library);
+    $class = DrushMakeProject::getInstance('library', $library);
     $class->make();
   }
 }
@@ -314,7 +312,7 @@ function drush_make_update_xml_download($project) {
     $version = (string) $release->version_major;
     // there should be version_patch attribute for every stable release
     // so checking whether the attribute exists should be enough
-    if (isset($release->version_patch)) {
+    if (isset($release->version_patch) && ((string) $release->version_extra) != 'dev') {
       $version .= '.' . (string) $release->version_patch;
     }
     // if version_patch attribute does not exist, then it should be a dev release
@@ -322,9 +320,11 @@ function drush_make_update_xml_download($project) {
     else {
       $version .= '.x';
     }
+
     if ($extra_version = (string) $release->version_extra) {
       $version .= '-' . $extra_version;
     }
+
     $releases[$version] = array(
       'file' => (string) $release->download_link,
       'md5' => (string) $release->mdhash,
@@ -332,6 +332,9 @@ function drush_make_update_xml_download($project) {
     );
     foreach (array('major', 'patch', 'extra') as $part) {
       $releases[$version][$part] = (string) $release->{'version_' . $part};
+    }
+    if ($releases[$version]['extra'] == 'dev') {
+      $releases[$version]['patch'] = 'x';
     }
   }
 
@@ -373,7 +376,7 @@ function drush_make_update_xml_download($project) {
 function _drush_make_update_xml_best_version($major, $releases) {
   $best = NULL;
   foreach ($releases as $version => $release_info) {
-    if ($release_info['major'] == $major && version_compare($best, $version, '<')) {
+    if ((!$major || $release_info['major'] == $major) && !empty($release_info['file']) && version_compare($best, $version, '<')) {
       $best = $version;
     }
   }
@@ -381,6 +384,11 @@ function _drush_make_update_xml_best_version($major, $releases) {
 }
 
 function drush_make_build_path($build_path) {
+  static $saved_path;
+  if (isset($saved_path)) {
+    return $saved_path;
+  }
+
   // Determine the base of the build.
   if (drush_get_option('tar')) {
     $build_path = dirname($build_path) . '/' . basename($build_path, '.tar.gz') . '.tar.gz';
@@ -400,6 +408,7 @@ function drush_make_build_path($build_path) {
     drush_set_error(dt('Base path %path already exists', array('%path' => $build_path)));
     return FALSE;
   }
+  $saved_path = $build_path;
   return $build_path;
 }
 
@@ -425,13 +434,13 @@ function drush_make_move_build($build_path) {
 }
 
 function drush_make_version() {
-  return '2.2';
+  return '2.3';
 }
 
 /**
  * Drush callback; make a makefile from the current install.
  */
-function drush_drush_make_make_generate($file) {
+function drush_drush_make_make_generate($file = NULL) {
   include_once 'drush_make.generate.inc';
   _drush_make_generate($file);
 }

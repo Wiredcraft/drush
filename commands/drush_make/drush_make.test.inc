@@ -51,7 +51,7 @@ function drush_make_test_get_tests($id = NULL) {
       'makefile' => 'tests/post.make',
       'build'    => TRUE,
       'messages' => array(
-        'Build hash: 9a5e2476d858ff182053257a688e32f0',
+        'Build hash: 6a50624cbd65cc69011ae6c089ce298a',
       ),
       'options'  => array('no-core' => TRUE),
     ),
@@ -60,7 +60,7 @@ function drush_make_test_get_tests($id = NULL) {
       'makefile' => 'tests/git.make',
       'build'    => TRUE,
       'messages' => array(
-        'Build hash: 374b448ab58cb329585ff75337bf5374',
+        'Build hash: ac0899a193835f7e93af812dae4e2c58',
       ),
       'options'  => array('no-core' => TRUE),
     ),
@@ -69,7 +69,7 @@ function drush_make_test_get_tests($id = NULL) {
       'makefile' => 'tests/patches.make',
       'build'    => TRUE,
       'messages' => array(
-        'Build hash: 24f14f6e28498678cebcab2cff3e1030',
+        'Build hash: e2d38e343c7e95b994443c34ec665a23',
       ),
       'options'  => array('no-core' => TRUE, 'no-patch-txt' => TRUE),
     ),
@@ -78,7 +78,7 @@ function drush_make_test_get_tests($id = NULL) {
       'makefile' => 'tests/patches.make',
       'build'    => TRUE,
       'messages' => array(
-        'Build hash: 173ae5e2120463e31ff2e2a9cc02491b',
+        'Build hash: c17e8b59055db741778f9048bf289332',
       ),
       'options'  => array('no-core' => TRUE),
     ),
@@ -123,7 +123,7 @@ function drush_make_test_get_tests($id = NULL) {
       'makefile' => 'tests/translations.make',
       'build'    => TRUE,
       'messages' => array(
-        'Build hash: 4aa84d1d71fbe1120cb2988cc4dd224d',
+        'Build hash: 1c662c27170ac23942c6a7eb15512a95',
       ),
       'options'  => array('translations' => 'es,pt-br'),
     ),

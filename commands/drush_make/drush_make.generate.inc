@@ -6,13 +6,16 @@ include_once drupal_get_path('module', 'system') . '/system.install';
 /**
  * Drush callback; generate makefile from the current build.
  */
-function _drush_make_generate($file) {
+function _drush_make_generate($file = NULL) {
+  if (!$file) {
+    drush_die('Missing filename');
+  }
   // What projects should we pin the versions for?
   // Check the command-line options for details
   foreach(array("include", "exclude") as $option) {
     $version_options[$option] = drush_get_option("$option-versions");
     if ($version_options[$option] !== TRUE) {
-      $version_options[$option] = array_filter(split(",", $version_options[$option]));
+      $version_options[$option] = array_filter(explode(",", $version_options[$option]));
     }
   }
 
@@ -34,7 +37,7 @@ function _drush_make_generate($file) {
 
   // Non-default profiles section.
   $install_profile = variable_get('install_profile', '');
-  if ($install_profile != 'default' && $install_profile != '') {
+  if (!in_array($install_profile, array('default', 'standard', 'minimal')) && $install_profile != '') {
     $projects[$install_profile]['type'] =
     $projects[$install_profile]['_type'] = 'profile';
     if (!_drush_generate_makefile_check_updatexml($install_profile, 'profile')) {
