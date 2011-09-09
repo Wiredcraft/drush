@@ -92,8 +92,6 @@ define('DRUSH_BOOTSTRAP_DRUPAL_DATABASE', 4);
 /**
  * Fully initialize Drupal.
  *
- * This is the default bootstrap phase all commands will try to reach,
- * unless otherwise specified.
  * This is analogous to the DRUPAL_BOOTSTRAP_FULL bootstrap phase in
  * Drupal.
  *
@@ -104,6 +102,9 @@ define('DRUSH_BOOTSTRAP_DRUPAL_FULL', 5);
 
 /**
  * Log in to the initialiased Drupal site.
+ *
+ * This is the default bootstrap phase all commands will try to reach,
+ * unless otherwise specified.
  *
  * This bootstrap phase is used after the site has been
  * fully bootstrapped.
@@ -388,11 +389,14 @@ function drush_bootstrap_error($code, $message = null) {
  * handler takes over.
  */
 function drush_error_handler($errno, $message, $filename, $line, $context) {
-  // Hide E_DEPRECATED messages.
+  // E_DEPRECATED was added in PHP 5.3. Drupal 6 will not fix all the
+  // deprecated errors, but suppresses them. So we suppress them as well.
   if (defined('E_DEPRECATED')) {
     $errno = $errno & ~E_DEPRECATED;
   }
 
+  // "error_reporting" is usually set in php.ini, but may be changed by
+  // drush_errors_on() and drush_errors_off().
   if ($errno & error_reporting()) {
     // By default we log notices.
     $type = drush_get_option('php-notices', 'notice');
